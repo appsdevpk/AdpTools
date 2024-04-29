@@ -1,0 +1,7 @@
+{
+	"singular":"Package",
+	"plural":"Packages",
+	"extraArgs": {
+		"supports": ["title","thumbnail"]
+	}
+}

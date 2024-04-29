@@ -1,0 +1,22 @@
+{
+	"config":{
+		"title":"Footer Options",
+		"option_key":"footeroptions",
+		"parent_slug":"siteoptions"
+	},
+	"fields": {
+		"label":{
+			"name":"Label",
+			"desc":"Tour Label",
+			"type":"text"
+		},
+		"isfeatured":{
+			"name":"Is Featured",
+			"type":"select",
+			"options":{
+				"No":"No",
+				"Yes":"Yes"
+			}
+		}
+	}
+}

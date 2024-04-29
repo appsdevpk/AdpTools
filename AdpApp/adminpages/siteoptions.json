@@ -1,0 +1,41 @@
+{
+	"config":{
+		"title":"Home Options",
+		"option_key":"siteoptions"
+	},
+	"fields": {
+		"label":{
+			"name":"Label",
+			"desc":"Tour Label",
+			"type":"text"
+		},
+		"isfeatured":{
+			"name":"Is Featured",
+			"type":"select",
+			"options":{
+				"No":"No",
+				"Yes":"Yes"
+			}
+		},
+		"sectionsList":{
+			"description":"Tour Sections",
+			"type":"group",
+			"options":{
+				"group_title":"Entry {#}",
+				"add_button":"Add Another Entry",
+				"remove_button":"Remove Entry",
+				"sortable":true
+			},
+			"fields":{
+				"title":{
+					"name":"Title",
+					"type":"text"
+				},
+				"content":{
+					"name":"Content",
+					"type":"wysiwyg"
+				}
+			}
+		}
+	}
+}
