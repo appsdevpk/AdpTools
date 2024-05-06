@@ -33,3 +33,8 @@ You can register custom admin pages too. Just place a json configuration file in
 
 There is a sub admin page in Adp Tools named **Libraries**, here you can search for different js or css libraries from cdnjs to use in your site. You have two option for search one Search Similar, it will search for the libraries matching the search keyword you entered. Then there is Search Exact option, this will search the exact library against the keyword entered, from here you can copy the cdn paths to clipboard or save those for later by clicking Save To My Library button.
 ![enter image description here](http://demos.appsdevpk.com/wp-content/uploads/2024/04/screenshot-woocommercetest.local-2024.04.28-23_21_57.png)
+
+
+## Server Components
+
+Server components or custom html components can be used as html tags anywhere in your wordpress site, realm library is being used to render these components, to create a component, create a blade template file in servercomponents folder inside the app folder. You should follow the naming conventions for the components (should be atleast two words separated by -). Each component should have at least one template file, then there is the config file for the component in json format, this file contains the list of component attributes and states (samples are provided in the app folder), and if you want to handle or listen to the events then you can define those inside a directory with the same name as the component and the suffix -flows. For further details, look at the realm framework documentation and the attached samples.

@@ -1,0 +1,13 @@
+<style>
+	:host {
+		display: block;
+		padding: 4px 8px;
+		font-size: 1rem;
+		border-left: 5px solid teal;
+		margin-bottom: 10px;
+	}
+</style>
+<div>
+	<span>✅</span>
+	<slot name="[at]label"></slot>
+</div>

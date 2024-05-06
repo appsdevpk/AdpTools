@@ -1,0 +1,1 @@
+<h1><slot global name="#counter"></slot></h1>

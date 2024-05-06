@@ -1,0 +1,8 @@
+{
+	"attributes":{
+		"label":{
+			"type":"string",
+			"default":"Empty Label"
+		}
+	}
+}

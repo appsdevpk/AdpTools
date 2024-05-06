@@ -1,0 +1,1 @@
+<set-state name="input" value="$.target.value" from="event"></set-state>

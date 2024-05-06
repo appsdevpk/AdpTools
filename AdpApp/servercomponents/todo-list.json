@@ -1,0 +1,16 @@
+{
+	"states":{
+		"input":{
+			"type":"string",
+			"default":""
+		},
+		"list":{
+			"type":"array",
+			"default":"[]"
+		},
+		"is-btn-disabled":{
+			"type":"boolean",
+			"default":"true"
+		}
+	}
+}

@@ -1,0 +1,26 @@
+{
+	"attributes":{
+		"name":{
+			"type":"string",
+			"default":"anonymous"
+		}
+	},
+	"states":{
+		"age":{
+			"type":"number",
+			"default":"100"
+		},
+		"is-loading":{
+			"type":"boolean",
+			"default":"true"
+		},
+		"content":{
+			"type":"html",
+			"default":"Loading..."
+		},
+		"show-button":{
+			"type":"boolean",
+			"default":"false"
+		}
+	}
+}

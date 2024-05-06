@@ -1,0 +1,7 @@
+{
+	"counter":{
+		"type":"number",
+		"default":"0",
+		"storage":"localStorage"
+	}
+}
