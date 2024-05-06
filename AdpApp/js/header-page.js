@@ -1,0 +1,1 @@
+console.log('This script is in header for all pages');
