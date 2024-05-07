@@ -42,3 +42,7 @@ Server components or custom html components can be used as html tags anywhere in
 ## Conditional Css And JS
 
 There are a lot of ways to improve your wordpress site performance, one is to conditionally load css and js where needed, now you can do it easily with the help of this plugin. Just place your css and js files in their repsective folders inside app folder. The rule is to have your file name in two or three parts separated with -. First part will always be either header or footer, this will tell the plugin where you want to place this css or js. Second part can have any one option from template, single and page, this will tell the plugin where to include this script, in a custom template, in a post or in any page. If you have the third part in the name which is optional, then this will decide in which specific template, post or page, you want to include this css or js. Samples are included in app folder of the repo
+
+## Live Components
+
+Same as server components, but keeps updating (without page reload) by use of SSE (Server Sent Events), you dont need to write any SSE login, just define a component in the livecomponents folder inside the app folder, all the server components rule apply. But the name should be different from server components, if you define a component hello-world in server components then you cannot define a live component with same name.

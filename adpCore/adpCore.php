@@ -113,6 +113,7 @@ add_action('wp_head',function(){
 	adpIncludeDynamicCss('header');
 	adpIncludeDynamicJs('header');
 	adpIncludeComponents();
+	adpIncludeLiveComponents();
 });
 add_action('wp_footer',function(){
 	$pluginUrl = plugin_dir_url( __FILE__ );
@@ -365,7 +366,17 @@ if(!function_exists('adpSendApiCall')){
 		return array_keys($arr) !== range(0, count($arr) - 1);
 	}
 }
-
+function adpGetSinglePost($id,$meta=false){
+	$postObj = get_post($id);
+	$ret = array();
+	if($postObj){
+		$ret['Post'] = $postObj;
+	}
+	if($meta){
+		$ret['Meta'] = get_post_custom($id);
+	}
+	return $ret;
+}
 function adpGetPostsList($postType,$postsPerPage=2,$extraArgs=array(),$meta=false){
 	$ret = array();
 	$args = array(
@@ -496,3 +507,4 @@ include "lib/libraries.php";
 include "lib/conditionals.php";
 include "lib/servercomponents.php";
 include "lib/conditionalcssjs.php";
+include "lib/livecomponents.php";

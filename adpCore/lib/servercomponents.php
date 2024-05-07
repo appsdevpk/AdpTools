@@ -1,6 +1,8 @@
 <?php
+define('SERVER_COMPONENTS_DIR','servercomponents');
+
 function adpIncludeComponents(){
-	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/servercomponents/';
+	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/'.SERVER_COMPONENTS_DIR.'/';
 	
 	if(file_exists($dirPath)){
 		chdir($dirPath);
@@ -10,7 +12,7 @@ function adpIncludeComponents(){
 			echo '<web-app>';
 			$globalStatesPath = $dirPath.'global-states.json';
 			if(file_exists($globalStatesPath)){
-				$globalStatesUri = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/servercomponents/global-states.json';
+				$globalStatesUri = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/'.SERVER_COMPONENTS_DIR.'/global-states.json';
 				$globalStates = json_decode(file_get_contents($globalStatesUri),true);
 				if(is_array($globalStates) && count($globalStates) > 0){
 					foreach($globalStates as $key=>$val){
@@ -42,12 +44,12 @@ add_action('template_redirect', function($template){
 	if(isset($wp_query->query['adpComponent'])){
 		$adpComponent = str_ireplace('.html','',$wp_query->query['adpComponent']);
 		$adpComponentParts = explode('-',$adpComponent);
-		$componentPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/servercomponents/'.$adpComponent.'.blade.php';
+		$componentPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/'.SERVER_COMPONENTS_DIR.'/'.$adpComponent.'.blade.php';
 		if(file_exists($componentPath) && count($adpComponentParts) > 1){
-			$parsedComp = adpRenderBladeView($adpComponent,'servercomponents');
-			$componentConfig = get_stylesheet_directory().'/'.APP_DIRECTORY.'/servercomponents/'.$adpComponent.'.json';
+			$parsedComp = adpRenderBladeView($adpComponent,SERVER_COMPONENTS_DIR);
+			$componentConfig = get_stylesheet_directory().'/'.APP_DIRECTORY.'/'.SERVER_COMPONENTS_DIR.'/'.$adpComponent.'.json';
 			if(file_exists($componentConfig)){
-				$componentConfigUrl = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/servercomponents/'.$adpComponent.'.json';
+				$componentConfigUrl = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/'.SERVER_COMPONENTS_DIR.'/'.$adpComponent.'.json';
 				$compConfig = json_decode(file_get_contents($componentConfigUrl),true);
 			}
 			$children = function(){
@@ -70,7 +72,7 @@ add_action('template_redirect', function($template){
 						echo '<element-state name="'.$key.'" type="'.$compType.'">'.$defaultVal.'</element-state>';
 					}
 				}
-				$componentFlowsDir = get_stylesheet_directory().'/'.APP_DIRECTORY.'/servercomponents/'.$adpComponent.'-flows/';
+				$componentFlowsDir = get_stylesheet_directory().'/'.APP_DIRECTORY.'/'.SERVER_COMPONENTS_DIR.'/'.$adpComponent.'-flows/';
 				
 				if(file_exists($componentFlowsDir)){
 					chdir($componentFlowsDir);
@@ -86,12 +88,12 @@ add_action('template_redirect', function($template){
 									$eventName = $fileNameParts[1];
 									$eventAttrib = isset($fileNameParts[2]) ? '="'.$fileNameParts[2].'"' : '';;
 									echo '<listen-event '.$eventName.''.$eventAttrib.'>';
-									$componentFlowsPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/servercomponents/'.$adpComponent.'-flows/'.$componentFlow;
+									$componentFlowsPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/'.SERVER_COMPONENTS_DIR.'/'.$adpComponent.'-flows/'.$componentFlow;
 									include $componentFlowsPath;
 									echo '</listen-event>';
 								}else{
 									echo '<trigger-event '.$fileNameParts[0].'="'.$fileNameParts[1].'">';
-									$componentFlowsPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/servercomponents/'.$adpComponent.'-flows/'.$componentFlow;
+									$componentFlowsPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/'.SERVER_COMPONENTS_DIR.'/'.$adpComponent.'-flows/'.$componentFlow;
 									include $componentFlowsPath;
 									echo '</trigger-event>';
 								}
