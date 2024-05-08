@@ -1,0 +1,3 @@
+<?php $widgetArea=@adpEmbedWidgetArea('test-widget-area');?>
+
+<?php echo $widgetArea; ?>

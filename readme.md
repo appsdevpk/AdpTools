@@ -22,7 +22,7 @@ You can register a custom taxonomy by placing a json configuration file in **tax
 
 ## Custom Meta Boxes
 
-This plugin uses cmb2 plugin (included in the plugin folder, you don't need to install it separately). To register a custom meta box, just place a configuration file in **metaboxes** folder inside app folder. For help about the configuration just visit cmb2 documentation. A sample configuration file is provided in the repo.
+This plugin uses cmb2 plugin (included in the plugin folder, you don't need to install it separately). To register a custom meta box, just place a configuration file in **metaboxes** folder inside app folder. For help about the configuration just visit cmb2 documentation. A sample configuration file is provided in the repo. There is an extra parameter in field options named showinadmin, if you want to show a specific meta field in admin posts list, just set this parameter to true. You can conditionally show the meta box by configuring showon in meta configuration, currently only two conditions are supported, you can either configure ids parameter to show this meta box on posts with selected ids or you can configure templates list to show this meta box on specific template. For further help take a look at the examples.
 
 ## Admin Pages
 
@@ -46,3 +46,15 @@ There are a lot of ways to improve your wordpress site performance, one is to co
 ## Live Components
 
 Same as server components, but keeps updating (without page reload) by use of SSE (Server Sent Events), you dont need to write any SSE login, just define a component in the livecomponents folder inside the app folder, all the server components rule apply. But the name should be different from server components, if you define a component hello-world in server components then you cannot define a live component with same name.
+
+## Admin Dashboard Widgets
+
+Registering custom dashboard widgets cannot be more easy than placing just a template and config file inside admindashwidgets inside the app folder, just place a blade template file and a json config file with the same name inside admindashwidgets folder inside app folder and the widget will appear on your dashboard.
+
+## Custom Help Tabs
+
+To show a custom help tab in wordpress help menu, just place a blade template and a json config file inside helptabs folder in app folder and the help tab will show in wordpress help menu. Example is provided in app folder.
+
+## Custom Widgets and Widget Areas
+
+You need to place two files to register a widget inside widgets folder in app folder. One is the blade template to render the output of the widget and the other is the json config file, the keys in config files are self explanatory (take a look at the provided example). You can register a custom widget area just by placing a json config file in widgetareas folder inside the app folder. To include that area in your theme or some blade template just use the function adpEmbedWidgetArea('widget-area-id')

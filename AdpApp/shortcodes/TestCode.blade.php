@@ -1,2 +1,3 @@
-<?php
-echo 'Test Code';
+@set($widgetArea=adpEmbedWidgetArea('test-widget-area'))
+
+{!!$widgetArea!!}

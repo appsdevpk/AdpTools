@@ -1,0 +1,29 @@
+{
+	"showon":{
+		"ids":"21,47",
+		"templates":"templateOne.php,templateTwo.php"
+	},
+	"config":{
+		"title":"Tour Options",
+		"object_types":["page"],
+		"context":"normal",
+		"priority":"high",
+		"show_names":true
+	},
+	"fields": {
+		"label":{
+			"name":"Label",
+			"desc":"Tour Label",
+			"type":"text",
+			"showinadmin":true
+		},
+		"isfeatured":{
+			"name":"Is Featured",
+			"type":"select",
+			"options":{
+				"No":"No",
+				"Yes":"Yes"
+			}
+		}
+	}
+}

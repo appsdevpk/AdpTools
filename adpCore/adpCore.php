@@ -23,6 +23,8 @@ include "cmb2/init.php";
 use eftec\bladeone\BladeOne;
 use eftec\bladeonehtml\BladeOneHtml;
 
+$widgetsList = [];
+
 class adpBlade extends BladeOne{
     use BladeOneHtml;
 	
@@ -39,7 +41,149 @@ class adpBlade extends BladeOne{
 add_action('init',function(){
 	adpInitShortcodes();
 	adpInitPostTypesAndTaxonomies();
+	adpInitCustomCols();
+	
 });
+
+add_action( 'widgets_init', function(){
+	adpInitWidgets();
+	adpInitWidgetAreas();
+} );
+function adpInitWidgetAreas(){
+	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/widgetareas/';
+	if(file_exists($dirPath)){
+		chdir($dirPath);
+		$widgetAreasFiles = glob('*.json');
+		
+		if($widgetAreasFiles){
+			foreach($widgetAreasFiles as $areaFile){
+				$fileName = basename($areaFile);
+				$areaID = str_ireplace('.json','',$fileName);
+				$configFileUrl = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/widgetareas/'.$fileName;
+				$areaConfig = json_decode(file_get_contents($configFileUrl),true);
+				if(!isset($areaConfig['id'])){
+					$areaConfig['id'] = $areaID;
+				}
+				register_sidebar($areaConfig);
+			}
+		}
+	}
+}
+function adpEmbedWidgetArea($areaid){
+	ob_start();
+	if ( is_active_sidebar( $areaid ) ){
+		?>
+		<div id="widgetarea-<?php echo $areaid; ?>" class="<?php echo $areaid; ?>">
+			<?php dynamic_sidebar( $areaid ); ?>
+		</div>
+		<?php
+	}
+	$output = ob_get_clean();
+	return do_shortcode($output);
+}
+function adpInitWidgets(){
+	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/widgets/';
+	if(file_exists($dirPath)){
+		chdir($dirPath);
+		$themeWidgetFiles = glob('*.php');
+		
+		if($themeWidgetFiles){
+			foreach($themeWidgetFiles as $widgetFile){
+				$fileName = str_ireplace('.blade.php','',basename($widgetFile));
+				
+				$configFile = get_stylesheet_directory().'/'.APP_DIRECTORY.'/widgets/'.$fileName.'.json';
+				
+				if(file_exists($configFile)){
+					$configFileUrl = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/widgets/'.$fileName.'.json';
+					$widgetConfig = json_decode(file_get_contents($configFileUrl),true);
+					
+					if(isset($widgetConfig['Config'])){
+						adpInitWidgetClass($widgetConfig,$fileName);
+					}
+				}
+			}
+		}
+	}
+}
+
+class AdpWidget extends WP_Widget {
+	public $widgetConfig = [];
+	public $args = array(
+		'before_title'  => '<h4 class="widgettitle">',
+		'after_title'   => '</h4>',
+		'before_widget' => '<div class="widget-wrap">',
+		'after_widget'  => '</div></div>',
+	);
+	
+	public function __construct($widgetConfig=array()) {
+		$this->widgetConfig = $widgetConfig;
+		$this->ars = array(
+			'before_title'  => $this->widgetConfig['Config']['before_title'],
+			'after_title'   => $this->widgetConfig['Config']['after_title'],
+			'before_widget' => $this->widgetConfig['Config']['before_widget'],
+			'after_widget'  => $this->widgetConfig['Config']['after_widget'],
+		);
+		parent::__construct($this->widgetConfig['Config']['WidgetID'],$this->widgetConfig['Config']['Name']);
+		
+		$className = $this->widgetConfig['Config']['ClassName'];
+	}
+
+	public function widget( $args, $instance ) {
+		echo adpRenderBladeView($this->widgetConfig['Config']['WidgetID'],'widgets',array(
+			'args'=>$args,
+			'instance'=>$instance
+		));
+	}
+
+	public function form( $instance ) {
+		if(isset($this->widgetConfig['Fields'])){
+			$fieldVals = array();
+			foreach($this->widgetConfig['Fields'] as $key=>$val){
+				$fieldVals[$key] = ! empty( $instance[$key] ) ? $instance[$key] : '';
+			}
+			foreach($this->widgetConfig['Fields'] as $key=>$val){
+				?>
+				<p>
+					<label for="<?php echo esc_attr( $this->get_field_id( $key ) ); ?>"><?php echo esc_html__( $val['label'], '' ); ?></label>
+					<?php 
+					adpRenderWidgetField($val['type'],esc_attr( $this->get_field_id( $key ) ),esc_attr( $this->get_field_name( $key ) ),esc_attr( $fieldVals[$key] )); 
+					?>
+				</p>
+				<?php
+			}
+		}
+	}
+
+	public function update( $new_instance, $old_instance ) {
+		$instance = array();
+		
+		if(isset($this->widgetConfig['Fields'])){
+			$fieldVals = array();
+			foreach($this->widgetConfig['Fields'] as $key=>$val){
+				$fieldVals[$key] = ! empty( $instance[$key] ) ? $instance[$key] : '';
+				$instance[$key]  = ( ! empty( $new_instance[$key] ) ) ? $new_instance[$key] : '';
+			}
+		}
+
+		return $instance;
+	}
+}
+function adpRenderWidgetField($wtype,$fldID,$fldName,$defaultval=''){
+	$wtypeParts = explode('-',$wtype);
+	if($wtypeParts[0]=='textarea'){
+		echo '<textarea class="widefat" id="'.$fldID.'" name="'.$fldName.'" type="text" cols="30" rows="10">'.$defaultval.'</textarea>';
+	}elseif($wtypeParts[0]=='input' && count($wtypeParts) > 1){
+		echo '<input class="widefat" id="'.$fldID.'" name="'.$fldName.'" type="'.$wtypeParts[1].'" value="'.$defaultval.'" />';
+	}
+}
+
+function adpInitWidgetClass($widgetConfig,$fileName){
+	$widgetConfig['Config']['WidgetID'] = $fileName;
+	class_alias('AdpWidget', $widgetConfig['Config']['ClassName']);
+	
+	$widgetsList[$fileName] = new $widgetConfig['Config']['ClassName']($widgetConfig);
+	register_widget($widgetsList[$fileName]);
+}
 function adpInitPostTypesAndTaxonomies(){
 	//Init custom post types
 	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/posttypes/';
@@ -128,7 +272,103 @@ add_action('wp_footer',function(){
 	adpIncludeDynamicCss('footer');
 	adpIncludeDynamicJs('footer');
 });
-
+function adpInitCustomCols(){
+	//Initialize metaboxes
+	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/metaboxes/';
+	
+	if(file_exists($dirPath)){
+		chdir($dirPath);
+		$themeMetaBoxes = glob('*.json');
+		
+		if($themeMetaBoxes){
+			$metaBoxes = array();
+			
+			foreach($themeMetaBoxes as $metaBox){
+				$fileName = basename($metaBox);
+				$metaBoxFile = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/metaboxes/'.$fileName;
+				$metaBoxConfig = json_decode(file_get_contents($metaBoxFile),true);
+				
+				if(isset($metaBoxConfig['fields']) && isset($metaBoxConfig['config'])){
+					$metaFields = $metaBoxConfig['fields'];
+					foreach($metaBoxConfig['config']['object_types'] as $postType){
+						add_filter( 'manage_'.$postType.'_posts_columns', function($columns) use ($metaFields){
+							foreach($metaFields as $key=>$fldConfig){
+								if(isset($fldConfig['showinadmin']) && $fldConfig['showinadmin']){
+									$columns[$key] = $fldConfig['name'];
+								}
+							}
+							
+							return $columns;
+						} );
+						add_action( 'manage_'.$postType.'_posts_custom_column' , function($column, $post_id) use ($metaFields){
+							foreach($metaFields as $key=>$fldConfig){
+								if(isset($fldConfig['showinadmin']) && $key==$column && $fldConfig['showinadmin']){
+									echo get_post_meta($post_id,$key,true);
+								}
+							}
+						}, 10, 2 );
+					}
+				}
+			}
+		}
+	}
+}
+add_action('admin_head', function(){
+	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/helptabs/';
+	if(file_exists($dirPath)){
+		chdir($dirPath);
+		$helpTabsList = glob('*.php');
+		
+		if($helpTabsList){
+			global $post_ID;
+			$screen = get_current_screen();
+			
+			$metaBoxes = array();
+			$groupFieldsList = array();
+			foreach($helpTabsList as $helpTab){
+				$fileName = str_ireplace('.blade','',str_ireplace('.php','',basename($helpTab)));
+				$configPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/helptabs/'.$fileName.'.json';
+				$tabTitle = $fileName;
+				if(file_exists($configPath)){
+					$configUri = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/helptabs/'.$fileName.'.json';
+					$configUriCont = json_decode(file_get_contents($configUri),true);
+					$tabTitle = $configUriCont['Title'];
+				}
+				$screen->add_help_tab( array(
+					'id' => $fileName,
+					'title' => $tabTitle,
+					'content' => adpRenderBladeView($fileName,'helptabs')
+				));
+			}
+		}
+	}
+});
+add_action( 'wp_dashboard_setup', function(){
+	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/admindashwidgets/';
+	if(file_exists($dirPath)){
+		chdir($dirPath);
+		$dashWidgets = glob('*.php');
+		
+		if($dashWidgets){
+			$metaBoxes = array();
+			$groupFieldsList = array();
+			foreach($dashWidgets as $dashWidget){
+				$fileName = str_ireplace('.blade','',str_ireplace('.php','',basename($dashWidget)));
+				$configPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/admindashwidgets/'.$fileName.'.json';
+				$widgetTitle = $fileName;
+				if(file_exists($configPath)){
+					$configUri = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/admindashwidgets/'.$fileName.'.json';
+					$configUriCont = json_decode(file_get_contents($configUri),true);
+					$widgetTitle = $configUriCont['Title'];
+				}
+				
+				wp_add_dashboard_widget( $fileName, $widgetTitle, function($post, $callback_args) use ($fileName){
+					echo adpRenderBladeView($fileName,'admindashwidgets');
+				} );
+			}
+		}
+	}
+} );
 add_action( 'cmb2_admin_init', function(){
 	//Initialize metaboxes
 	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/metaboxes/';
@@ -148,9 +388,36 @@ add_action( 'cmb2_admin_init', function(){
 					$metaBoxID = isset($metaBoxConfig['config']['id']) ? $metaBoxConfig['config']['id'] : str_ireplace('.json','',$fileName);
 					$metaBoxID = META_PREFIX.$metaBoxID;
 					$metaBoxConfig['config']['id'] = $metaBoxID;
+					if(isset($metaBoxConfig['showon'])){
+						$showOnCB = $metaBoxConfig['showon'];
+						$metaBoxConfig['config']['show_on_cb'] = function($cmb) use ($showOnCB){
+							if(isset($showOnCB['ids'])){
+								$idsList = explode(',',$showOnCB['ids']);
+								global $post;
+								if(in_array($post->ID,$idsList)){
+									return true;
+								}
+							}elseif(isset($showOnCB['templates'])){
+								$templatesList = explode(',',$showOnCB['templates']);
+								$templateFound = false;
+								foreach($templatesList as $template){
+									if(is_page_template($template)){
+										$templateFound = true;
+										break;
+									}
+								}
+								return $templateFound;
+							}
+							return false;
+						};
+					}
+					
 					$metaBoxes[$metaBoxID] = new_cmb2_box($metaBoxConfig['config']);
 					if(isset($metaBoxConfig['fields'])){
 						foreach($metaBoxConfig['fields'] as $key=>$fldConfig){
+							if(isset($fldConfig['showinadmin'])){
+								unset($fldConfig['showinadmin']);
+							}
 							if($fldConfig['type']=='group'){
 								if(isset($fldConfig['fields'])){
 									$groupFields = isset($fldConfig['fields']) ? $fldConfig['fields'] : array();

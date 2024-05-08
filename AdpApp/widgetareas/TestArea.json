@@ -1,0 +1,9 @@
+{
+	"id":"test-widget-area",
+	"name":"Test Widget Area",
+	"description":"Test Widget Area",
+	"before_widget":"<div id='%1$s' class='widget %2$s'>",
+	"after_widget":"</div>",
+	"before_title":"<div class='widget-title-holder'><h3 class='widget-title'>",
+	"after_title":"</h3></div>"
+}

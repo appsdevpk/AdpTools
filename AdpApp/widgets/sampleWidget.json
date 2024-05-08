@@ -1,0 +1,20 @@
+{
+	"Config":{
+		"ClassName":"SampleWidget",
+		"Name":"Sample Widget",
+		"before_title":"<h4 class='widgettitle'>",
+		"after_title":"</h4>",
+		"before_widget":"<div class='widget-wrap'>",
+		"after_widget":"</div>"
+	},
+	"Fields":{
+		"title":{
+			"type":"input-text",
+			"label":"Title : "
+		},
+		"text":{
+			"type":"textarea",
+			"label":"Text : "
+		}
+	}
+}
