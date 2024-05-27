@@ -216,10 +216,21 @@ add_action('template_redirect', function($template){
 	}
 });
 function adpSearchAnnotations($uri){
-	$res = adpGetPostsList('adpannotations',-1,array(
-		'meta_key'=>'adpAnnotationPage',
-		'meta_value'=>$uri
-	),true);
+	$args = array(
+		'meta_query'=>array(
+			'relation'=>'AND',
+			array(
+				'key'=>'adpAnnotationPage',
+				'value'=>$uri
+			),
+			array(
+				'key'=>'adpAnnotationType',
+				'value'=>'Text'
+			)
+		)
+	);
+	
+	$res = adpGetPostsList('adpannotations',-1,$args,true);
 	
 	$total = count($res);
 	$ret = array(
