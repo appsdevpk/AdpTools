@@ -10,7 +10,7 @@ function adpIncludeDynamicCss($location='header'){
 		if($cssFiles){
 			foreach($cssFiles as $cssFile){
 				$fileNameParts = explode('-',str_ireplace('.css','',basename($cssFile)));
-				if(adpParseConditionalCssJs($fileNameParts,$location)){
+				if(adpParseConditionalCssJs($fileNameParts,$location,'css')){
 					echo '<link rel="stylesheet" href="'.$dirUri.basename($cssFile).'" />';
 				}
 			}
@@ -28,18 +28,19 @@ function adpIncludeDynamicJs($location='header'){
 		if($cssFiles){
 			foreach($cssFiles as $cssFile){
 				$fileNameParts = explode('-',str_ireplace('.js','',basename($cssFile)));
-				if(adpParseConditionalCssJs($fileNameParts,$location)){
+				if(adpParseConditionalCssJs($fileNameParts,$location,'js')){
 					echo '<script src="'.$dirUri.basename($cssFile).'"></script>';
 				}
 			}
 		}
 	}
 }
-function adpParseConditionalCssJs($fileNameParts,$location){
+function adpParseConditionalCssJs($fileNameParts,$location,$fileType){
 	if(count($fileNameParts)==2){
 		if($fileNameParts[1]=='template' && $fileNameParts[0]==$location && is_page_template()){
 			return true;
 		}elseif($fileNameParts[1]=='page' && $fileNameParts[0]==$location && is_page()){
+
 			return true;
 		}elseif($fileNameParts[1]=='single' && $fileNameParts[0]==$location && is_single()){
 			return true;

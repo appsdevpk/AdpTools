@@ -16,6 +16,7 @@ if ( !function_exists( 'add_action' ) ) {
 
 define('APP_DIRECTORY','AdpApp');
 define('META_PREFIX','adp_');
+define('PLUGIN_URL',plugin_dir_url( __FILE__ ));
 
 include "vendor/autoload.php";
 include "cmb2/init.php";
@@ -39,151 +40,43 @@ class adpBlade extends BladeOne{
 }
 
 add_action('init',function(){
+	adpRegisterPostTypes('adpforms','Adp Form','Adp Forms', array(
+		'supports'=>array('title')
+	));
+	
 	adpInitShortcodes();
 	adpInitPostTypesAndTaxonomies();
 	adpInitCustomCols();
-	
 });
 
-add_action( 'widgets_init', function(){
-	adpInitWidgets();
-	adpInitWidgetAreas();
+add_action( 'add_meta_boxes', function(){
+	add_meta_box('adpFormsDesignerMeta','Form Designer','adpFormsDesignerMetaFunc','adpforms');
 } );
-function adpInitWidgetAreas(){
-	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/widgetareas/';
-	if(file_exists($dirPath)){
-		chdir($dirPath);
-		$widgetAreasFiles = glob('*.json');
-		
-		if($widgetAreasFiles){
-			foreach($widgetAreasFiles as $areaFile){
-				$fileName = basename($areaFile);
-				$areaID = str_ireplace('.json','',$fileName);
-				$configFileUrl = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/widgetareas/'.$fileName;
-				$areaConfig = json_decode(file_get_contents($configFileUrl),true);
-				if(!isset($areaConfig['id'])){
-					$areaConfig['id'] = $areaID;
-				}
-				register_sidebar($areaConfig);
-			}
-		}
-	}
-}
-function adpEmbedWidgetArea($areaid){
-	ob_start();
-	if ( is_active_sidebar( $areaid ) ){
-		?>
-		<div id="widgetarea-<?php echo $areaid; ?>" class="<?php echo $areaid; ?>">
-			<?php dynamic_sidebar( $areaid ); ?>
-		</div>
-		<?php
-	}
-	$output = ob_get_clean();
-	return do_shortcode($output);
-}
-function adpInitWidgets(){
-	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/widgets/';
-	if(file_exists($dirPath)){
-		chdir($dirPath);
-		$themeWidgetFiles = glob('*.php');
-		
-		if($themeWidgetFiles){
-			foreach($themeWidgetFiles as $widgetFile){
-				$fileName = str_ireplace('.blade.php','',basename($widgetFile));
-				
-				$configFile = get_stylesheet_directory().'/'.APP_DIRECTORY.'/widgets/'.$fileName.'.json';
-				
-				if(file_exists($configFile)){
-					$configFileUrl = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/widgets/'.$fileName.'.json';
-					$widgetConfig = json_decode(file_get_contents($configFileUrl),true);
-					
-					if(isset($widgetConfig['Config'])){
-						adpInitWidgetClass($widgetConfig,$fileName);
-					}
-				}
-			}
-		}
-	}
+function adpFormsDesignerMetaFunc($post){
+	$pluginUrl = plugin_dir_url( __FILE__ );
+	?>
+    <script type="text/javascript" src="https://unpkg.com/knockout/build/output/knockout-latest.js"></script>
+    <link  href="https://unpkg.com/survey-core/defaultV2.min.css" type="text/css" rel="stylesheet">
+    <script src="https://unpkg.com/survey-core/survey.core.min.js"></script>
+    <script src="https://unpkg.com/survey-knockout-ui/survey-knockout-ui.min.js"></script>
+    
+    <link  href="<?php echo $pluginUrl; ?>/js/formcreator/survey-creator-core.min.css" type="text/css" rel="stylesheet">
+    <script src="<?php echo $pluginUrl; ?>/js/formcreator/survey-creator-core.min.js"></script>
+    <script src="https://unpkg.com/survey-creator-knockout/survey-creator-knockout.min.js"></script>
+	<div id="adpFormEditor" style="height: 70vh;"></div>
+	<script>
+		const creatorOptions = {
+			showLogicTab: true,
+			isAutoSave: true
+		};
+		const creator = new SurveyCreator.SurveyCreator(creatorOptions);
+		document.addEventListener("DOMContentLoaded", function() {
+			creator.render("adpFormEditor");
+		});
+	</script>
+	<?php
 }
 
-class AdpWidget extends WP_Widget {
-	public $widgetConfig = [];
-	public $args = array(
-		'before_title'  => '<h4 class="widgettitle">',
-		'after_title'   => '</h4>',
-		'before_widget' => '<div class="widget-wrap">',
-		'after_widget'  => '</div></div>',
-	);
-	
-	public function __construct($widgetConfig=array()) {
-		$this->widgetConfig = $widgetConfig;
-		$this->ars = array(
-			'before_title'  => $this->widgetConfig['Config']['before_title'],
-			'after_title'   => $this->widgetConfig['Config']['after_title'],
-			'before_widget' => $this->widgetConfig['Config']['before_widget'],
-			'after_widget'  => $this->widgetConfig['Config']['after_widget'],
-		);
-		parent::__construct($this->widgetConfig['Config']['WidgetID'],$this->widgetConfig['Config']['Name']);
-		
-		$className = $this->widgetConfig['Config']['ClassName'];
-	}
-
-	public function widget( $args, $instance ) {
-		echo adpRenderBladeView($this->widgetConfig['Config']['WidgetID'],'widgets',array(
-			'args'=>$args,
-			'instance'=>$instance
-		));
-	}
-
-	public function form( $instance ) {
-		if(isset($this->widgetConfig['Fields'])){
-			$fieldVals = array();
-			foreach($this->widgetConfig['Fields'] as $key=>$val){
-				$fieldVals[$key] = ! empty( $instance[$key] ) ? $instance[$key] : '';
-			}
-			foreach($this->widgetConfig['Fields'] as $key=>$val){
-				?>
-				<p>
-					<label for="<?php echo esc_attr( $this->get_field_id( $key ) ); ?>"><?php echo esc_html__( $val['label'], '' ); ?></label>
-					<?php 
-					adpRenderWidgetField($val['type'],esc_attr( $this->get_field_id( $key ) ),esc_attr( $this->get_field_name( $key ) ),esc_attr( $fieldVals[$key] )); 
-					?>
-				</p>
-				<?php
-			}
-		}
-	}
-
-	public function update( $new_instance, $old_instance ) {
-		$instance = array();
-		
-		if(isset($this->widgetConfig['Fields'])){
-			$fieldVals = array();
-			foreach($this->widgetConfig['Fields'] as $key=>$val){
-				$fieldVals[$key] = ! empty( $instance[$key] ) ? $instance[$key] : '';
-				$instance[$key]  = ( ! empty( $new_instance[$key] ) ) ? $new_instance[$key] : '';
-			}
-		}
-
-		return $instance;
-	}
-}
-function adpRenderWidgetField($wtype,$fldID,$fldName,$defaultval=''){
-	$wtypeParts = explode('-',$wtype);
-	if($wtypeParts[0]=='textarea'){
-		echo '<textarea class="widefat" id="'.$fldID.'" name="'.$fldName.'" type="text" cols="30" rows="10">'.$defaultval.'</textarea>';
-	}elseif($wtypeParts[0]=='input' && count($wtypeParts) > 1){
-		echo '<input class="widefat" id="'.$fldID.'" name="'.$fldName.'" type="'.$wtypeParts[1].'" value="'.$defaultval.'" />';
-	}
-}
-
-function adpInitWidgetClass($widgetConfig,$fileName){
-	$widgetConfig['Config']['WidgetID'] = $fileName;
-	class_alias('AdpWidget', $widgetConfig['Config']['ClassName']);
-	
-	$widgetsList[$fileName] = new $widgetConfig['Config']['ClassName']($widgetConfig);
-	register_widget($widgetsList[$fileName]);
-}
 function adpInitPostTypesAndTaxonomies(){
 	//Init custom post types
 	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/posttypes/';
@@ -250,9 +143,10 @@ function adpRenderBladeView($view,$viewDir,$data=array()){
 	}
 	
 	ob_start();
-	echo $blade->run($view,$data);
+	echo do_shortcode($blade->run($view,$data));
 	return ob_get_clean();
 }
+
 add_action('wp_head',function(){
 	adpIncludeDynamicCss('header');
 	adpIncludeDynamicJs('header');
@@ -272,47 +166,10 @@ add_action('wp_footer',function(){
 	adpIncludeDynamicCss('footer');
 	adpIncludeDynamicJs('footer');
 });
-function adpInitCustomCols(){
-	//Initialize metaboxes
-	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/metaboxes/';
-	
-	if(file_exists($dirPath)){
-		chdir($dirPath);
-		$themeMetaBoxes = glob('*.json');
-		
-		if($themeMetaBoxes){
-			$metaBoxes = array();
-			
-			foreach($themeMetaBoxes as $metaBox){
-				$fileName = basename($metaBox);
-				$metaBoxFile = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/metaboxes/'.$fileName;
-				$metaBoxConfig = json_decode(file_get_contents($metaBoxFile),true);
-				
-				if(isset($metaBoxConfig['fields']) && isset($metaBoxConfig['config'])){
-					$metaFields = $metaBoxConfig['fields'];
-					foreach($metaBoxConfig['config']['object_types'] as $postType){
-						add_filter( 'manage_'.$postType.'_posts_columns', function($columns) use ($metaFields){
-							foreach($metaFields as $key=>$fldConfig){
-								if(isset($fldConfig['showinadmin']) && $fldConfig['showinadmin']){
-									$columns[$key] = $fldConfig['name'];
-								}
-							}
-							
-							return $columns;
-						} );
-						add_action( 'manage_'.$postType.'_posts_custom_column' , function($column, $post_id) use ($metaFields){
-							foreach($metaFields as $key=>$fldConfig){
-								if(isset($fldConfig['showinadmin']) && $key==$column && $fldConfig['showinadmin']){
-									echo get_post_meta($post_id,$key,true);
-								}
-							}
-						}, 10, 2 );
-					}
-				}
-			}
-		}
-	}
-}
+
+/*
+Setup custom help tabs in admin
+*/
 add_action('admin_head', function(){
 	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/helptabs/';
 	if(file_exists($dirPath)){
@@ -343,6 +200,10 @@ add_action('admin_head', function(){
 		}
 	}
 });
+
+/*
+Setup custom dashboard widgets
+*/
 add_action( 'wp_dashboard_setup', function(){
 	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/admindashwidgets/';
 	if(file_exists($dirPath)){
@@ -369,170 +230,6 @@ add_action( 'wp_dashboard_setup', function(){
 		}
 	}
 } );
-add_action( 'cmb2_admin_init', function(){
-	//Initialize metaboxes
-	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/metaboxes/';
-	
-	if(file_exists($dirPath)){
-		chdir($dirPath);
-		$themeMetaBoxes = glob('*.json');
-		
-		if($themeMetaBoxes){
-			$metaBoxes = array();
-			$groupFieldsList = array();
-			foreach($themeMetaBoxes as $metaBox){
-				$fileName = basename($metaBox);
-				$metaBoxFile = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/metaboxes/'.$fileName;
-				$metaBoxConfig = json_decode(file_get_contents($metaBoxFile),true);
-				if(isset($metaBoxConfig['config'])){
-					$metaBoxID = isset($metaBoxConfig['config']['id']) ? $metaBoxConfig['config']['id'] : str_ireplace('.json','',$fileName);
-					$metaBoxID = META_PREFIX.$metaBoxID;
-					$metaBoxConfig['config']['id'] = $metaBoxID;
-					if(isset($metaBoxConfig['showon'])){
-						$showOnCB = $metaBoxConfig['showon'];
-						$metaBoxConfig['config']['show_on_cb'] = function($cmb) use ($showOnCB){
-							if(isset($showOnCB['ids'])){
-								$idsList = explode(',',$showOnCB['ids']);
-								global $post;
-								if(in_array($post->ID,$idsList)){
-									return true;
-								}
-							}elseif(isset($showOnCB['templates'])){
-								$templatesList = explode(',',$showOnCB['templates']);
-								$templateFound = false;
-								foreach($templatesList as $template){
-									if(is_page_template($template)){
-										$templateFound = true;
-										break;
-									}
-								}
-								return $templateFound;
-							}
-							return false;
-						};
-					}
-					
-					$metaBoxes[$metaBoxID] = new_cmb2_box($metaBoxConfig['config']);
-					if(isset($metaBoxConfig['fields'])){
-						foreach($metaBoxConfig['fields'] as $key=>$fldConfig){
-							if(isset($fldConfig['showinadmin'])){
-								unset($fldConfig['showinadmin']);
-							}
-							if($fldConfig['type']=='group'){
-								if(isset($fldConfig['fields'])){
-									$groupFields = isset($fldConfig['fields']) ? $fldConfig['fields'] : array();
-									unset($fldConfig['fields']);
-									$fldConfig['id'] = isset($fldConfig['id']) ? $fldConfig['id'] : $key;
-									
-									
-									$groupFieldsList[$key] = $metaBoxes[$metaBoxID]->add_field($fldConfig);
-									foreach($groupFields as $gFldKey=>$gFldConfig){
-										$gFldConfig['id'] = $gFldKey;
-										
-										$metaBoxes[$metaBoxID]->add_group_field($groupFieldsList[$key],$gFldConfig);
-									}
-								}
-							}else{
-								$fldConfig['id'] = $key;
-								$metaBoxes[$metaBoxID]->add_field($fldConfig);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	//Initialize admin pages
-	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/adminpages/';
-	
-	if(file_exists($dirPath)){
-		chdir($dirPath);
-		$themeMetaBoxes = glob('*.json');
-		
-		if($themeMetaBoxes){
-			$ret = adpInitAdminPages($themeMetaBoxes);
-			//var_dump($ret);
-			if(count($ret) > 0){
-				$ret1 = adpInitAdminPages($ret,true);
-			}
-		}
-	}
-} );
-function adpShowHideMetaBox($cmb){
-	$currTemplate = get_post_meta($cmb->object_id, '_wp_page_template', true);
-	if(in_array($currTemplate,array('farmerTpl.php','farmerTplVer2.php','farmerTplVer3.php'))){
-		return true;
-	}
-	return false;
-}
-function adpInitAdminPages($themeMetaBoxes,$subpages=false){
-	$ret = array();
-	if($themeMetaBoxes){
-		//var_dump($themeMetaBoxes);
-		$metaBoxes = array();
-		$groupFieldsList = array();
-		foreach($themeMetaBoxes as $metaBox){
-			$fileName = basename($metaBox);
-			$metaBoxFile = get_stylesheet_directory_uri().'/'.APP_DIRECTORY.'/adminpages/'.$fileName;
-			$metaBoxConfig = json_decode(file_get_contents($metaBoxFile),true);
-			if(isset($metaBoxConfig['config'])){
-				if(!$subpages && isset($metaBoxConfig['config']['parent_slug'])){
-					$ret[] = $metaBox;
-					continue;
-				}elseif($subpages && !isset($metaBoxConfig['config']['parent_slug'])){
-					continue;
-				}
-				
-				$metaBoxID = isset($metaBoxConfig['config']['id']) ? $metaBoxConfig['config']['id'] : str_ireplace('.json','',$fileName);
-				$metaBoxID = META_PREFIX.$metaBoxID;
-				$metaBoxConfig['config']['id'] = $metaBoxID;
-				$metaBoxConfig['config']['object_types'] = array('options-page');
-				
-				$metaBoxes[$metaBoxID] = new_cmb2_box($metaBoxConfig['config']);
-				
-				if(isset($metaBoxConfig['fields'])){
-					foreach($metaBoxConfig['fields'] as $key=>$fldConfig){
-						if($fldConfig['type']=='group'){
-							if(isset($fldConfig['fields'])){
-								$groupFields = isset($fldConfig['fields']) ? $fldConfig['fields'] : array();
-								unset($fldConfig['fields']);
-								$fldConfig['id'] = isset($fldConfig['id']) ? $fldConfig['id'] : $key;
-								
-								
-								$groupFieldsList[$key] = $metaBoxes[$metaBoxID]->add_field($fldConfig);
-								foreach($groupFields as $gFldKey=>$gFldConfig){
-									$gFldConfig['id'] = $gFldKey;
-									
-									$metaBoxes[$metaBoxID]->add_group_field($groupFieldsList[$key],$gFldConfig);
-								}
-							}
-						}else{
-							$fldConfig['id'] = $key;
-							$metaBoxes[$metaBoxID]->add_field($fldConfig);
-						}
-					}
-				}
-			}
-		}
-	}
-	return $ret;
-}
-
-function adpGetOptionPageData($metaid,$key = '', $default = false){
-	if ( function_exists( 'cmb2_get_option' ) ) {
-		return cmb2_get_option( $metaid, $key, $default );
-	}
-	$opts = get_option( $metaid, $default );
-	$val = $default;
-	if ( 'all' == $key ) {
-		$val = $opts;
-	} elseif ( is_array( $opts ) && array_key_exists( $key, $opts ) && false !== $opts[ $key ] ) {
-		$val = $opts[ $key ];
-	}
-
-	return $val;
-}
 
 add_action( 'admin_menu', function(){
 	add_menu_page( 'Adp Tools', 'Adp Tools', 'manage_options','AdpAdminTools', 'AdpAdminToolsFunc');
@@ -542,7 +239,125 @@ add_action( 'admin_menu', function(){
 	add_submenu_page('AdpAdminTools', 'Conditionals', 'Conditionals', 'manage_options','adpConditionals', 'adpConditionalsFunc');
 } );
 function AdpAdminToolsFunc(){
-	echo '<p>All tools listings here</p>';
+	$toolsList = json_decode(file_get_contents(PLUGIN_URL.'/tools/adpTools.json'),true);
+	?>
+	<style>
+		#adpToolsList{
+			list-style-type: none;
+			display:flex;
+			flex-wrap: wrap;
+			margin-top:30px;
+		}
+		#adpToolsList li{
+			width:30%;
+			min-width:300px;
+			margin: 0px 10px 10px 0px;
+			background:#fff;
+			position: relative;
+		}
+		#adpToolsList li h3{
+			margin:0px 0px 10px 0px;
+			padding: 10px;
+			background:#000;
+			color:#fff;
+		}
+		#adpToolsList li .adpToolDesc{
+			padding: 10px;
+			height: 100px;
+		}
+		#adpToolsList li .adpToolTags{
+			padding: 10px;
+			text-align:center;
+			border-top:1px solid #000;
+			margin-bottom: 10px;
+		}
+		#adpToolsList li a{
+			padding: 5px 10px;
+			text-align:center;
+			background:#fff;
+			display: inline-block;
+			text-decoration: none;
+			color:#000;
+			margin: 10px;
+			border: 1px solid #000
+		}
+		#adpToolsList li a:hover{
+			background:#000;
+			color:#fff
+		}
+	</style>
+	<?php 
+	$tagsList = array();
+	$tagsListCounts = array();
+	ob_start(); 
+	?>
+	<ul id="adpToolsList">
+		<?php 
+		foreach($toolsList as $tool){ 
+			if(!isset($tool['name'])){
+				continue;
+			}
+			$toolClasses = array();
+			foreach($tool['tags'] as $tag){
+				$toolClasses[] = str_ireplace(' ','-',$tag);
+				if(!in_array($tag,$tagsList)){
+					$tagsList[] = $tag;
+				}
+				if(!isset($tagsListCounts[$tag])){
+					$tagsListCounts[$tag] = 1;
+				}else{
+					$tagsListCounts[$tag] += 1;
+				}
+			}
+		?>
+		<li class="<?php echo implode(' ',$toolClasses); ?>">
+			<h3 class="adpToolName"><?php echo $tool['name']; ?></h3>
+			<div class="adpToolDesc"><?php echo $tool['desc']; ?></div>
+			<div class="adpToolTags"><?php echo implode(' , ',$tool['tags']); ?></div>
+			<a href="<?php echo $tool['url']; ?>" class="openTool">Open Here</a>
+			<a href="<?php echo $tool['url']; ?>" target="_blank">Open Separate</a>
+		</li>
+		<?php } ?>
+	</ul>
+	<div id="preview" style="display:none">
+		<input type="button" id="btnGoBack" value="Back" />
+		<iframe id="previewFrame" src="" style="width:100%;border:0px;height:500px"></iframe>
+	</div>
+	<script>
+		jQuery('.openTool').click(function(e){
+			e.preventDefault();
+			var currElem = jQuery(this);
+			jQuery('#adpToolsList').hide();
+			jQuery('#previewFrame').attr('src',currElem.attr('href'));
+			jQuery('#preview').show();
+		});
+		jQuery('#btnGoBack').click(function(e){
+			jQuery('#previewFrame').attr('src','');
+			jQuery('#adpToolsList').show();
+			jQuery('#preview').hide();
+		});
+		jQuery('#adpToolCat').change(function(){
+			var currVal = jQuery(this).val();
+			if(currVal===''){
+				jQuery('#adpToolsList li').show();
+			}else{
+				jQuery('#adpToolsList li').hide();
+				jQuery('#adpToolsList li.' + currVal).show();
+			}
+		});
+	</script>
+	<?php
+	$output = ob_get_clean();
+	echo '<label>Tools Category</label> ';
+	echo '<select id="adpToolCat">';
+	echo '<option value="">All</option>';
+	sort($tagsList);
+	foreach($tagsList as $tag){
+		$key = str_ireplace(' ','-',$tag);
+		echo '<option value="'.$key.'">'.$tag.' ('.$tagsListCounts[$tag].')</option>';
+	}
+	echo '</select>';
+	echo $output;
 }
 
 function adpGetUserRole($userid){
@@ -551,6 +366,10 @@ function adpGetUserRole($userid){
 		return $user->roles[0];
 	}
 	return '';
+}
+
+function adpGetCurrentUser(){
+	return new WP_User( get_current_user_id() );
 }
 
 function adpCreatePostWithData($postObj,$data){
@@ -564,6 +383,14 @@ function adpCreatePostWithData($postObj,$data){
 	if(!is_wp_error($post_id)){
 		foreach($data as $key=>$val){
 			update_post_meta($post_id,$key,$val);
+		}
+	}
+	return $post_id;
+}
+function adpUpdateMeta($postid,$meta){
+	if(is_array($meta) && count($meta) > 0){
+		foreach($meta as $key=>$val){
+			update_post_meta($postid,$key,$val);
 		}
 	}
 }
@@ -655,6 +482,7 @@ function adpGetPostsList($postType,$postsPerPage=2,$extraArgs=array(),$meta=fals
 			$args[$key] = $val;
 		}
 	}
+	
 	$posts = get_posts($args);
 	if($posts){
 		foreach($posts as $post){
@@ -775,3 +603,7 @@ include "lib/conditionals.php";
 include "lib/servercomponents.php";
 include "lib/conditionalcssjs.php";
 include "lib/livecomponents.php";
+include "lib/pageroutes.php";
+include "lib/metaboxes.php";
+include "lib/widgets.php";
+include "lib/annotations.php";

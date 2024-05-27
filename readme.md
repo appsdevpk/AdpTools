@@ -23,6 +23,7 @@ You can register a custom taxonomy by placing a json configuration file in **tax
 ## Custom Meta Boxes
 
 This plugin uses cmb2 plugin (included in the plugin folder, you don't need to install it separately). To register a custom meta box, just place a configuration file in **metaboxes** folder inside app folder. For help about the configuration just visit cmb2 documentation. A sample configuration file is provided in the repo. There is an extra parameter in field options named showinadmin, if you want to show a specific meta field in admin posts list, just set this parameter to true. You can conditionally show the meta box by configuring showon in meta configuration, currently only two conditions are supported, you can either configure ids parameter to show this meta box on posts with selected ids or you can configure templates list to show this meta box on specific template. For further help take a look at the examples.
+You can show custom meta boxes at front also, you just need a short code for that and that is, [adpMetaForm metaboxid="pageMeta" objectid="21"], here metaboxid is the id of metabox you want to show at front and the objectid is the post, page or custom post type id where you want to store that meta.
 
 ## Admin Pages
 
@@ -58,3 +59,15 @@ To show a custom help tab in wordpress help menu, just place a blade template an
 ## Custom Widgets and Widget Areas
 
 You need to place two files to register a widget inside widgets folder in app folder. One is the blade template to render the output of the widget and the other is the json config file, the keys in config files are self explanatory (take a look at the provided example). You can register a custom widget area just by placing a json config file in widgetareas folder inside the app folder. To include that area in your theme or some blade template just use the function adpEmbedWidgetArea('widget-area-id')
+
+## Custom pages
+
+If you want to register a custom url and execute your code when wordpress opens that url, you just need to place repsective template files in the pages folder inside the app folder. Like if you want to execute some code when someone opens yoursite.com/testpage/123, then you will create a folder inside pages folder named testpage and then will create a template file in that folder named 123.blade.php, and the code of that file will execute when someone will hit that url. You can use all wordpress functionality their. If you want to change the title of the page, just define a variable in your file with the name $pageTitle = "Test 1234 Page"; and assign it the value you want to show in the title.
+
+## Annotations
+
+One thing is very important when you are developing a wordpress site, that is the client's feedback, Now it will become a breeze to get the client feed back on any part of the site with the help of annotations. Only logged in users can annotate any part of the web page in two ways, to annotate a textual area, you just need to select some text and the annotation icon will appear, clicking that icon will open a popup comment area where you or your client can add comments, if you want to annoate images, just give the image annotate class and any logged in user can add comments on any part of that image by just creating a selection with the mouse and then adding comments in the popup which appears after.
+
+## Tools
+
+When you click on Adp Tools in wp admin after activating the plugin, you will see a list of tools which can help you in a lot small tasks, just explore those and find your favorite ones, there are two buttons with each tool (Open Here and Open Separate). Some tools will open inside your wordpress admin by clicking Open Here (using IFrame), but if some tool does not open this way, then click on Open Separate and it will open in new tab.

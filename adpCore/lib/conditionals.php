@@ -83,6 +83,8 @@ function adpConditionalsFunc(){
 								<option>Function Is</option>
 								<option>Taxonomy Is</option>
 								<option>Terms In</option>
+								<option>Is Mobile</option>
+								<option>Is Desktop</option>
 							</select>
 						</td>
 					</tr>
@@ -498,6 +500,10 @@ function adpParseConditionData($conditionData){
 				$ret = true;
 			}
 		}
+	}elseif($conditionData['condition']=='Is Mobile'){
+		return wp_is_mobile();
+	}elseif($conditionData['condition']=='Is Desktop'){
+		return !wp_is_mobile();
 	}
 	
 	return $ret;
