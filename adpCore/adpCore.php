@@ -230,14 +230,227 @@ add_action( 'wp_dashboard_setup', function(){
 		}
 	}
 } );
-
+function adpGetMultipleOptions($prefix){
+	$ret = array();
+	if($prefix!=''){
+		$query = "SELECT option_name FROM $wpdb->options WHERE option_name LIKE '".$prefix."%'";
+		$optionsList = $wpdb->get_col($query);
+		if(!empty($optionsList)){
+			foreach ($optionsList as $opt) {
+				$ret[$opt] = get_option($opt);
+			}
+		}
+	}
+}
+function adpCreateSelect($name,$options,$defaultVal='',$className=''){
+	?>
+	<select name="<?php echo $name; ?>" class="<?php echo $className; ?>">
+		<?php
+		foreach($options as $opt){
+			$str = $opt==$defaultVal ? 'selected' : '';
+			echo '<option '.$str.'>'.$opt.'</option>';
+		}
+		?>
+	</select>
+	<?php
+}
 add_action( 'admin_menu', function(){
 	add_menu_page( 'Adp Tools', 'Adp Tools', 'manage_options','AdpAdminTools', 'AdpAdminToolsFunc');
+	add_submenu_page('AdpAdminTools', 'Wizards', 'Wizards', 'manage_options', 'adpWizards', 'adpWizardsFunc');
 	add_submenu_page('AdpAdminTools', 'Libraries', 'Libraries', 'manage_options', 'adpLibariesSearch', 'adpLibariesSearchFunc');
 	//add_submenu_page('AdpAdminTools', 'Libraries Presets', 'Libraries Presets', 'manage_options', 'adpLibariesPresetsSearch', 'adpLibariesPresetsSearchFunc');
 	add_submenu_page('AdpAdminTools', 'My Libraries', 'My Libraries', 'manage_options', 'adpMyLibaries', 'adpMyLibariesFunc');
 	add_submenu_page('AdpAdminTools', 'Conditionals', 'Conditionals', 'manage_options','adpConditionals', 'adpConditionalsFunc');
 } );
+add_action( 'admin_enqueue_scripts', function($hook){
+	wp_enqueue_code_editor( array( 'type' => 'text/html' ) );
+	wp_enqueue_script( 'js-code-editor', plugin_dir_url( __FILE__ ) . '/code-editor.js', array( 'jquery' ), '', true );
+} );
+function adpWizardsFunc(){
+	global $wizardsConfig;
+	$baseUrl = 'admin.php?page=adpWizards&w=';
+	?>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<style>
+		.adpWizardsList{
+			list-style-type: none;
+			display:flex;
+			flex-wrap: wrap;
+			margin-top:30px;
+		}
+		.adpWizardsList li{
+			width:30%;
+			min-width:300px;
+			margin: 0px 10px 10px 0px;
+			position: relative;
+		}
+		.adpWizardsList li a{
+			text-decoration: none;
+			background:#fff;
+			display:block;
+			text-align:center;
+			font-size:35px;
+			color:#000;
+			padding: 15px 15px 20px 15px;
+			border:1px solid #000;
+			transition: all 0.5s
+		}
+		.adpWizardsList li a:hover{
+			background:#000;
+			color:#fff;
+			border:1px solid #fff;
+		}
+		.adpWizardsList li a i{
+			display: block;
+			width: fit-content;
+			margin: 10px auto
+		}
+		.adpWizardsList li a .adpWizardName{
+			font-size: 20px;
+		}
+		.adpArrayFieldSet{
+			margin:10px 0px;
+			padding:10px;
+			border:1px solid #ccc
+		}
+		.adpFieldHelp{
+			font-size:12px;
+			margin: 10px 0px 0px 0px;
+			color:#555
+		}
+	</style>
+	<?php
+	if(isset($_GET['w']) && isset($wizardsConfig['Wizards'][$_GET['w']])){
+		$widgetsConfigFields = $wizardsConfig['Wizards'][$_GET['w']]['Fields'];
+		if(isset($_REQUEST['btnSubmit'])){
+			$wizardFunction = isset($wizardsConfig['Wizards'][$_GET['w']]['FunctionName']) ? $wizardsConfig['Wizards'][$_GET['w']]['FunctionName'] : '';
+			if($wizardFunction!='' && function_exists($wizardFunction)){
+				$wizardFunction();
+				echo '<p><strong>'.$_GET['w'].'</strong> created successfully</p>';
+			}
+		}
+		?>
+		<h1>Create <?php echo $_GET['w']; ?></h1>
+		<form action="" method="post">
+			<table class="form-table">
+				<tbody>
+					<?php 
+					$postTypes = get_post_types(array(
+					   'public'   => true,
+					   '_builtin' => false
+					));
+					sort($postTypes);
+					foreach($widgetsConfigFields as $key=>$val){
+						adpRenderWizardField($key,$val,$postTypes);
+					}
+					?>
+				</tbody>
+			</table>
+			<input type="submit" name="btnSubmit" id="submit" class="button button-primary" value="Create" />
+		</form>
+		<script>
+			var editorsList = [];
+			jQuery('.codeeditor').each(function(ind){
+				editorsList[ind] = wp.codeEditor.initialize( jQuery(this) );
+			});
+			
+			jQuery('.adpAddArrayField').click(function(){
+				var currElem = jQuery(this);
+				var newFieldSet = currElem.parent().find('.adpFieldsetTemplate').html();
+				currElem.parent().find('.arrayFieldSubFieldsList').append(newFieldSet);
+			});
+			jQuery(document).on('click','.adpRemoveArrayField',function(){
+				var currElem = jQuery(this);
+				if(confirm('Are you sure?')){
+					currElem.parent().remove();
+				}
+			});
+		</script>
+		<?php
+	}else{
+		?>
+		<div style="margin:20px 0px;text-align:center;padding:10px;border:1px solid #ccc;font-size:20px;">All these wizards will create their corresponding template and/or configuration files inside the app folder in your current theme</div>
+		<ul class="adpWizardsList">
+			<?php foreach($wizardsConfig['Wizards'] as $key=>$val){ ?>
+			<li>
+				<a href="<?php echo $baseUrl.$key; ?>">
+					<?php echo $val['Icon']; ?>
+					<div class="adpWizardName"><?php echo $key; ?></div>
+				</a>
+			</li>
+			<?php } ?>
+		</ul>
+		<?php
+	}
+}
+function adpRenderWizardField($fldName,$fldOptions,$postTypes,$parseArrayFields=true){
+	$fldKey = strtolower(str_ireplace(' ','_',$fldName));
+	if(!$parseArrayFields){
+		$fldKey .= '[]';
+	}
+	?>
+	<tr>
+		<th>
+			<label for="<?php echo $fldKey; ?>"><?php echo $fldName; ?></label>
+		</th>
+		<td>
+		<?php
+		if($fldOptions['Type']=='text'){
+			echo '<input type="text" class="regular-text" id="'.$fldKey.'" name="'.$fldKey.'" />';
+		}elseif($fldOptions['Type']=='textarea'){
+			echo '<textarea class="large-text code" id="'.$fldKey.'" name="'.$fldKey.'"></textarea>';
+		}elseif($fldOptions['Type']=='editor'){
+			$editorClass = $parseArrayFields ? 'codeeditor' : '';
+			echo '<textarea class="large-text code '.$editorClass.'" id="'.$fldKey.'" name="'.$fldKey.'"></textarea>';
+		}elseif($fldOptions['Type']=='post_types'){
+			?>
+			<select name="<?php echo $fldKey; ?>" id="<?php echo $fldKey; ?>">
+				<?php foreach($postTypes as $postType){ ?>
+				<option><?php echo $postType; ?></option>
+				<?php } ?>
+			</select>
+			<?php
+		}elseif(in_array($fldOptions['Type'],array('array','group')) && $parseArrayFields){
+			$subFields = $fldOptions['Fields'];
+			$addButtonText = $fldOptions['AddButtonText'];
+			?>
+			<div class="arrayFieldContainer">
+				<div style="display:none" class="adpFieldsetTemplate">
+					<div class="adpArrayFieldSet">
+						<table class="form-table">
+							<tbody>
+								<?php 
+								foreach($subFields as $subFldName=>$subFldOptions){
+									adpRenderWizardField($subFldName,$subFldOptions,$postTypes,false);
+								}
+								?>
+							</tbody>
+						</table>
+						<input type="button" class="button button-primary adpRemoveArrayField" value="Remove" />
+					</div>
+				</div>
+				<div class="arrayFieldSubFieldsList"></div>
+				<input type="button" class="button button-primary adpAddArrayField" value="<?php echo $addButtonText; ?>" />
+			</div>
+			<?php
+		}elseif($fldOptions['Type']=='select'){
+			$optionsList = $fldOptions['Options'];
+			?>
+			<select name="<?php echo $fldKey; ?>" id="<?php echo $fldKey; ?>">
+				<?php foreach($optionsList as $key=>$val){ ?>
+				<option value="<?php echo $key; ?>"><?php echo $val; ?></option>
+				<?php } ?>
+			</select>
+			<?php
+		}
+		if(isset($fldOptions['HelpText'])){
+		?>
+		<div class="adpFieldHelp"><?php echo $fldOptions['HelpText']; ?></div>
+		<?php } ?>
+		</td>
+	</tr>
+	<?php
+}
 function AdpAdminToolsFunc(){
 	$toolsList = json_decode(file_get_contents(PLUGIN_URL.'/tools/adpTools.json'),true);
 	?>
@@ -607,3 +820,4 @@ include "lib/pageroutes.php";
 include "lib/metaboxes.php";
 include "lib/widgets.php";
 include "lib/annotations.php";
+include "lib/wizards.php";

@@ -100,7 +100,7 @@ class AdpWidget extends WP_Widget {
 				<p>
 					<label for="<?php echo esc_attr( $this->get_field_id( $key ) ); ?>"><?php echo esc_html__( $val['label'], '' ); ?></label>
 					<?php 
-					adpRenderWidgetField($val['type'],esc_attr( $this->get_field_id( $key ) ),esc_attr( $this->get_field_name( $key ) ),esc_attr( $fieldVals[$key] )); 
+					adpRenderWidgetField($val,esc_attr( $this->get_field_id( $key ) ),esc_attr( $this->get_field_name( $key ) ),esc_attr( $fieldVals[$key] )); 
 					?>
 				</p>
 				<?php
@@ -122,12 +122,24 @@ class AdpWidget extends WP_Widget {
 		return $instance;
 	}
 }
-function adpRenderWidgetField($wtype,$fldID,$fldName,$defaultval=''){
+function adpRenderWidgetField($fldOptions,$fldID,$fldName,$defaultval=''){
+	$wtype = $fldOptions['type'];
 	$wtypeParts = explode('-',$wtype);
+	$inputAttribs = isset($fldOptions['attributes']) ?  str_ireplace("'",'"',$fldOptions['attributes']) : '';
+	$defaultValue = isset($fldOptions['default']) ?  $fldOptions['default'] : '';
+	
 	if($wtypeParts[0]=='textarea'){
-		echo '<textarea class="widefat" id="'.$fldID.'" name="'.$fldName.'" type="text" cols="30" rows="10">'.$defaultval.'</textarea>';
+		echo '<textarea '.$inputAttribs.' class="widefat" id="'.$fldID.'" name="'.$fldName.'" type="text" cols="30" rows="10">'.$defaultval.'</textarea>';
 	}elseif($wtypeParts[0]=='input' && count($wtypeParts) > 1){
-		echo '<input class="widefat" id="'.$fldID.'" name="'.$fldName.'" type="'.$wtypeParts[1].'" value="'.$defaultval.'" />';
+		echo '<input '.$inputAttribs.' class="widefat" id="'.$fldID.'" name="'.$fldName.'" type="'.$wtypeParts[1].'" value="'.$defaultval.'" />';
+	}elseif($wtypeParts[0]=='select' && isset($fldOptions['options'])){
+		?>
+		<select <?php echo $inputAttribs; ?> name="<?php echo $fldName; ?>" id="<?php echo $fldID; ?>">
+			<?php foreach($fldOptions['options'] as $key=>$val){ ?>
+			<option <?php echo $defaultval==$key ? 'selected' : ''; ?> value="<?php echo $key; ?>"><?php echo $val; ?></option>
+			<?php } ?>
+		</select>
+		<?php
 	}
 }
 

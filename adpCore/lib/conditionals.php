@@ -1,16 +1,4 @@
 <?php
-function adpCreateSelect($name,$options,$defaultVal='',$className=''){
-	?>
-	<select name="<?php echo $name; ?>" class="<?php echo $className; ?>">
-		<?php
-		foreach($options as $opt){
-			$str = $opt==$defaultVal ? 'selected' : '';
-			echo '<option '.$str.'>'.$opt.'</option>';
-		}
-		?>
-	</select>
-	<?php
-}
 function adpConditionalsFunc(){
 	$conditionals = array();
 	$dirPath = get_stylesheet_directory().'/'.APP_DIRECTORY.'/conditionals/';
@@ -58,7 +46,7 @@ function adpConditionalsFunc(){
 			update_option($conditionalSlug,json_encode($conditionsData),true);
 			update_option($conditionalSlugDef,$_POST['defshowhide'],true);
 		}
-		
+		$conditionalTypes = array('','Post Type Is','Post ID In','Url Is','Function Is','Taxonomy Is','Terms In','Is Mobile','Is Desktop');
 		?>
 		<div style="display: none" id="conditionalTemplate">
 			<table class="form-table conditionalTable">
@@ -76,15 +64,9 @@ function adpConditionalsFunc(){
 						<th>Condition</th>
 						<td>
 							<select class="conditionSelect" name="condition[]">
-								<option></option>
-								<option>Post Type Is</option>
-								<option>Post ID In</option>
-								<option>Url Is</option>
-								<option>Function Is</option>
-								<option>Taxonomy Is</option>
-								<option>Terms In</option>
-								<option>Is Mobile</option>
-								<option>Is Desktop</option>
+								<?php foreach($conditionalTypes as $conditionalType){ ?>
+								<option><?php echo $conditionalType; ?></option>
+								<?php } ?>
 							</select>
 						</td>
 					</tr>
@@ -158,7 +140,7 @@ function adpConditionalsFunc(){
 			}
 			?>
 			<details>
-				<summary><?php echo $conditional['Name']; ?></summary>
+				<summary><?php echo $conditional['Name'].' [adpConditionals slug="'.$conditional['Slug'].'"]'; ?></summary>
 				<div class="conditionalForm">
 					<div class="contentsRows" style="display:none">
 						<?php 
@@ -220,7 +202,7 @@ function adpConditionalsFunc(){
 										<th>Condition</th>
 										<td>
 											<?php 
-											adpCreateSelect('condition[]',array('','Post Type Is','Post ID In','Url Is','Function Is','Taxonomy Is','Terms In'),$conditionData['condition'],'conditionSelect'); 
+											adpCreateSelect('condition[]',$conditionalTypes,$conditionData['condition'],'conditionSelect'); 
 											?>
 										</td>
 									</tr>
@@ -318,8 +300,10 @@ function adpConditionalsFunc(){
 				}else{
 					let conditionInd = conditionsList.indexOf(currVal);
 					let conditionLabel = conditionsLabels[conditionInd];
-					currElem.parent().parent().parent().find('.customvalrow').show();
-					currElem.parent().parent().parent().find('.customvalrow th').html(conditionLabel);
+					if(conditionInd >= 0){
+						currElem.parent().parent().parent().find('.customvalrow').show();
+						currElem.parent().parent().parent().find('.customvalrow th').html(conditionLabel);
+					}
 				}
 			}
 		});

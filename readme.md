@@ -71,3 +71,10 @@ One thing is very important when you are developing a wordpress site, that is th
 ## Tools
 
 When you click on Adp Tools in wp admin after activating the plugin, you will see a list of tools which can help you in a lot small tasks, just explore those and find your favorite ones, there are two buttons with each tool (Open Here and Open Separate). Some tools will open inside your wordpress admin by clicking Open Here (using IFrame), but if some tool does not open this way, then click on Open Separate and it will open in new tab.
+
+
+## Wizards
+
+Here you can visually create configuration and template files for all the tools available in the plugin. No need to copy app folder inside your theme, the wizards will take care of it.
+
+![enter image description here](http://demos.appsdevpk.com/wp-content/uploads/2024/06/screenshot-woocommercetest.local-2024.06.23-22_55_09.jpg)
